@@ -126,7 +126,7 @@ def _t18(r,ticker):
     x=r.to_numpy();out=[]
     # Features use only contemporaneous and lagged returns; no future observations.
     feat=pd.DataFrame({"abs_return":np.abs(x),"squared_return":x*x})
-    feat["rolling_vol"]=pd.Series(x).rolling(20,min_periods=10).std().bfill()
+    feat["rolling_vol"]=pd.Series(x).rolling(20,min_periods=10).std().fillna(pd.Series(x).expanding(min_periods=2).std()).fillna(0.0)
     z=(feat-feat.mean())/(feat.std(ddof=1).replace(0,1))
     try:
         from hmmlearn.hmm import GaussianHMM
