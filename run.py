@@ -8,6 +8,7 @@ from stockresearch.experiments import run_experiments, TEST_IDS
 from stockresearch.time_series import run_time_series_experiments, TEST_IDS as TIME_SERIES_TEST_IDS
 from stockresearch.universe import stage_stocks
 from stockresearch.config import INITIAL_SIX
+from stockresearch.risk import run_risk_experiments, TEST_IDS as RISK_TEST_IDS
 
 
 def main():
@@ -15,7 +16,7 @@ def main():
     sub=p.add_subparsers(dest="command",required=True)
     d=sub.add_parser("download"); d.add_argument("--data-dir",default="data"); d.add_argument("--start"); d.add_argument("--end"); d.add_argument("--synthetic",action="store_true")
     a=sub.add_parser("audit"); a.add_argument("--data-dir",default="data")
-    t=sub.add_parser("test"); t.add_argument("--data-dir",default="data"); t.add_argument("--output-dir",default="results"); t.add_argument("--stage",choices=["initial","comparative","exploratory","final"],default="initial"); t.add_argument("--tests",nargs="+",choices=TEST_IDS+TIME_SERIES_TEST_IDS)
+    t=sub.add_parser("test"); t.add_argument("--data-dir",default="data"); t.add_argument("--output-dir",default="results"); t.add_argument("--stage",choices=["initial","comparative","exploratory","final"],default="initial"); t.add_argument("--tests",nargs="+",choices=TEST_IDS+TIME_SERIES_TEST_IDS+RISK_TEST_IDS)
     report=sub.add_parser("report"); report.add_argument("--output-dir",default="results")
     args=p.parse_args(); logging.basicConfig(level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
     if args.command=="download":
@@ -27,7 +28,7 @@ def main():
         print(audit_panels(args.data_dir).to_string(index=False))
     elif args.command=="test":
         tickers=INITIAL_SIX if args.stage=="initial" else stage_stocks(args.stage)
-        selected=args.tests or TEST_IDS\n        first=[x for x in selected if x in TEST_IDS]\n        second=[x for x in selected if x in TIME_SERIES_TEST_IDS]\n        frames=[]\n        if first: frames.append(run_experiments(args.data_dir,args.output_dir,first,tickers)[0])\n        if second: frames.append(run_time_series_experiments(args.data_dir,args.output_dir,second,tickers)[0])\n        import pandas as pd\n        results=pd.concat(frames,ignore_index=True) if frames else pd.DataFrame()\n        summary=results.groupby(["test_id","status"]).size().unstack(fill_value=0).reset_index()
+        selected=args.tests or (TEST_IDS+TIME_SERIES_TEST_IDS+RISK_TEST_IDS)\n        first=[x for x in selected if x in TEST_IDS]\n        second=[x for x in selected if x in TIME_SERIES_TEST_IDS]\n        third=[x for x in selected if x in RISK_TEST_IDS]\n        frames=[]\n        if first: frames.append(run_experiments(args.data_dir,args.output_dir,first,tickers)[0])\n        if second: frames.append(run_time_series_experiments(args.data_dir,args.output_dir,second,tickers)[0])\n        if third: frames.append(run_risk_experiments(args.data_dir,args.output_dir,third,tickers)[0])\n        import pandas as pd\n        results=pd.concat(frames,ignore_index=True) if frames else pd.DataFrame()\n        summary=results.groupby(["test_id","status"]).size().unstack(fill_value=0).reset_index()
         print(summary.to_string(index=False))
         print(f"Saved {len(results)} method-level result rows under {args.output_dir}/")
     elif args.command=="report":
