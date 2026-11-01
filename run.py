@@ -27,7 +27,15 @@ def main():
         print(audit_panels(args.data_dir).to_string(index=False))
     elif args.command=="test":
         tickers=INITIAL_SIX if args.stage=="initial" else stage_stocks(args.stage)
-        selected=args.tests or TEST_IDS\n        first=[x for x in selected if x in TEST_IDS]\n        second=[x for x in selected if x in TIME_SERIES_TEST_IDS]\n        frames=[]\n        if first: frames.append(run_experiments(args.data_dir,args.output_dir,first,tickers)[0])\n        if second: frames.append(run_time_series_experiments(args.data_dir,args.output_dir,second,tickers)[0])\n        import pandas as pd\n        results=pd.concat(frames,ignore_index=True) if frames else pd.DataFrame()\n        summary=results.groupby(["test_id","status"]).size().unstack(fill_value=0).reset_index()
+        selected=args.tests or TEST_IDS
+        first=[x for x in selected if x in TEST_IDS]
+        second=[x for x in selected if x in TIME_SERIES_TEST_IDS]
+        frames=[]
+        if first: frames.append(run_experiments(args.data_dir,args.output_dir,first,tickers)[0])
+        if second: frames.append(run_time_series_experiments(args.data_dir,args.output_dir,second,tickers)[0])
+        import pandas as pd
+        results=pd.concat(frames,ignore_index=True) if frames else pd.DataFrame()
+        summary=results.groupby(["test_id","status"]).size().unstack(fill_value=0).reset_index()
         print(summary.to_string(index=False))
         print(f"Saved {len(results)} method-level result rows under {args.output_dir}/")
     elif args.command=="report":
