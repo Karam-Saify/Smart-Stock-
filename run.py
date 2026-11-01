@@ -6,6 +6,7 @@ from stockresearch import data, synthetic
 from stockresearch.quality import audit_panels
 from stockresearch.experiments import run_experiments, TEST_IDS
 from stockresearch.universe import stage_stocks
+from stockresearch.config import INITIAL_SIX
 
 
 def main():
@@ -24,7 +25,7 @@ def main():
     elif args.command=="audit":
         print(audit_panels(args.data_dir).to_string(index=False))
     elif args.command=="test":
-        tickers=stage_stocks(args.stage)
+        tickers=INITIAL_SIX if args.stage=="initial" else stage_stocks(args.stage)
         results,summary=run_experiments(args.data_dir,args.output_dir,args.tests,tickers)
         print(summary.to_string(index=False))
         print(f"Saved {len(results)} method-level result rows to {args.output_dir}/experiment_results.csv")
