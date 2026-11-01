@@ -1,4 +1,4 @@
-name: Python research checks
+name: Research package checks
 on:
   push:
     branches: [main, "integration/**"]
