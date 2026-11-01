@@ -32,8 +32,8 @@ def test_nonpositive_prices_are_rejected():
 
 def test_missingness_and_extreme_returns_are_warnings():
     panel = pd.DataFrame(
-        {"AAA": [10.0, np.nan, 100.0, 101.0]},
-        index=pd.date_range("2024-01-01", periods=4),
+        {"AAA": [10.0, 100.0, np.nan, 101.0, 102.0]},
+        index=pd.date_range("2024-01-01", periods=5),
     )
     report = audit_price_panel(panel, max_missing_fraction=0.10, extreme_log_return=0.40)
     assert {"high_missingness", "extreme_returns"} <= set(report["code"])
