@@ -1,6 +1,6 @@
 """Defensive Yahoo/FRED ingestion. Raw vendor responses are retained for auditability."""
 from __future__ import annotations
-import json, logging, os, random, time
+import json, logging, os, random, time, hashlib
 from pathlib import Path
 from datetime import datetime, timezone
 import numpy as np
@@ -74,12 +74,16 @@ def build_panels(data_dir):
 def download_all(data_dir,start=None,end=None,tickers=None,include_macro=True):
     root=Path(data_dir); raw=root/"raw"; raw.mkdir(parents=True,exist_ok=True)
     requested=list(tickers or universe.all_tickers())+(list(config.MACRO) if include_macro else [])
-    failures=[]; manifest={"started_at":datetime.now(timezone.utc).isoformat(),"start":start or config.START,"end":end or config.END,"downloaded":{},"failures":{}}
+    failures=[]; manifest={"started_at":datetime.now(timezone.utc).isoformat(),"start":start or config.START,"end":end or config.END,"provider":"Yahoo Finance via yfinance","retrieval_policy":{"auto_adjust":False,"actions":True,"price_panel":"Adj Close","point_in_time_validity":"not established; vendor history may be revised"},"downloaded":{},"failures":{}}
     for ticker in requested:
         path=raw/f"{safe_name(ticker)}.csv"
         try:
-            df=fetch_yahoo(ticker,start,end); df.to_csv(path)
-            manifest["downloaded"][ticker]={"rows":len(df),"first":str(df.index.min().date()),"last":str(df.index.max().date()),"file":str(path.relative_to(root))}
+            df=fetch_yahoo(ticker,start,end)
+            temporary=path.with_suffix(path.suffix+".tmp")
+            df.to_csv(temporary)
+            os.replace(temporary,path)
+            digest=hashlib.sha256(path.read_bytes()).hexdigest()
+            manifest["downloaded"][ticker]={"rows":len(df),"first":str(df.index.min().date()),"last":str(df.index.max().date()),"file":str(path.relative_to(root)),"sha256":digest,"retrieved_at":datetime.now(timezone.utc).isoformat(),"columns":list(df.columns),"timezone":"normalized to UTC-naive dates"}
             log.info("%s: %s rows",ticker,len(df))
         except Exception as exc:
             failures.append(ticker); manifest["failures"][ticker]=repr(exc); log.error("%s: %s",ticker,exc)
