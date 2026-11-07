@@ -16,6 +16,13 @@ from datetime import date
 from pathlib import Path
 from typing import Sequence
 
+# When executed as `python scripts/scrape_market_data.py`, Python places only
+# the scripts directory on sys.path. Add the repository root so the existing
+# stockresearch package can be imported without requiring an editable install.
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
+
 from stockresearch import data, universe
 from stockresearch.quality import audit_panels
 
