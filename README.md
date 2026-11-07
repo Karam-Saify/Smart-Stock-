@@ -27,8 +27,12 @@ python -m pytest -q
 
 Offline smoke test: `python run.py download --synthetic`, then run tests and report. Synthetic observations are never real market data.
 
-The `test` command writes one combined `experiment_results.csv` and
-`experiment_summary.csv` across all selected engines. Each invocation starts with
+The `test` command writes `experiment_results.csv`, `experiment_summary.csv`, and
+`experiment_manifest.json`. The manifest records the exact adjusted-price panel SHA-256,
+available source/download metadata, research question and hypothesis, selected universe
+and methods, key engine settings, software commit, runtime, and execution environment.
+Use `--question`, `--hypothesis`, and `--notes` to preserve the research protocol.
+Each invocation starts with
 fresh intermediate engine outputs, so previous runs are not silently appended to
 the current run. The latest run replaces the canonical ledger.
 
