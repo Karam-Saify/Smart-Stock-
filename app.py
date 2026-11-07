@@ -62,6 +62,9 @@ with st.sidebar:
     research_question = st.text_input("Research question", placeholder="What market behaviour are you investigating?")
     hypothesis = st.text_input("Predeclared hypothesis", placeholder="What result would support or contradict it?")
     p_adjustment = st.selectbox("Multiple-testing adjustment", ["holm", "bonferroni", "fdr_bh", "fdr_by", "none"], index=0, help="Applied across tickers within each identical method and p-value metric family. It does not correct across different methods or research questions.")
+    ci_block_length = st.number_input("Bootstrap block length (trading days)", min_value=1, max_value=60, value=5)
+    ci_replicates = st.number_input("Bootstrap replicates", min_value=100, max_value=20000, value=2000, step=100)
+    ci_confidence = st.selectbox("Interval confidence level", [0.90, 0.95, 0.99], index=1)
     protocol_notes = st.text_area("Protocol notes", placeholder="Assumptions, exclusions, thresholds, and caveats", height=80)
     chosen=st.multiselect("Research questions / methods",TESTS,default=TESTS,format_func=lambda test_id: f"{test_id} · {METHODS[test_id].question}")
     if research_mode == "Guided":
@@ -86,7 +89,7 @@ if run:
         if research_question.strip(): cmd.extend(["--question", research_question.strip()])
         if hypothesis.strip(): cmd.extend(["--hypothesis", hypothesis.strip()])
         if protocol_notes.strip(): cmd.extend(["--notes", protocol_notes.strip()])
-        cmd.extend(["--p-adjustment", p_adjustment])
+        cmd.extend(["--p-adjustment", p_adjustment, "--ci-block-length", str(int(ci_block_length)), "--ci-bootstrap", str(int(ci_replicates)), "--ci-confidence", str(ci_confidence)])
         with st.spinner("Running statistical experiments…"):
             proc=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True,timeout=1800)
         if proc.returncode==0:
@@ -162,7 +165,7 @@ with uncertainty:
     nums=numeric_metrics(view)
     pvals=nums[nums.metric.str.contains("pvalue",case=False,na=False)] if not nums.empty else pd.DataFrame()
     if pvals.empty:
-        st.info("No scalar p-values in this selection. Confidence intervals are not systematically recorded in the current ledger.")
+        st.info("No scalar p-values in this selection.")
     else:
         st.caption("Raw p-values are shown for transparency. Use the separately reported adjusted values for the declared ticker-level families; they do not cover every possible research choice.")
         pv=pvals[["test_id","ticker","method","metric","value","observations"]].copy()
@@ -172,6 +175,14 @@ with uncertainty:
         fig.update_layout(template="plotly_dark",yaxis_type="log",paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",height=390)
         st.plotly_chart(fig,use_container_width=True)
         st.dataframe(pv,use_container_width=True,hide_index=True)
+    uncertainty_path = Path(result_path).expanduser().parent / "experiment_uncertainty.csv"
+    if uncertainty_path.exists():
+        uncertainty_frame = pd.read_csv(uncertainty_path)
+        if not uncertainty_frame.empty and "ticker" in uncertainty_frame:
+            uncertainty_frame = uncertainty_frame[uncertainty_frame.ticker.isin(sf)]
+            st.subheader("Moving-block bootstrap: mean daily log return")
+            st.caption("Descriptive historical interval from adjusted closes. Incomplete price histories are skipped rather than compressed. Block length and replicate count are recorded in the experiment manifest. This is not a forecast or a predictive interval.")
+            st.dataframe(uncertainty_frame, use_container_width=True, hide_index=True)
     inference_path = Path(result_path).expanduser().parent / "experiment_inference.csv"
     if inference_path.exists():
         adjusted = pd.read_csv(inference_path)
