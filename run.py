@@ -17,7 +17,7 @@ from stockresearch.risk import run_risk_experiments, TEST_IDS as RISK_TEST_IDS
 from stockresearch.ledger import write_combined_ledger
 from stockresearch.experiment_metadata import build_experiment_metadata
 from stockresearch.research_registry import list_methods
-from stockresearch.inference import write_inference_table
+from stockresearch.inference import build_inference_table
 
 
 def main():
@@ -96,8 +96,9 @@ def main():
             p_adjustment=args.p_adjustment,
             started_at=started_at, elapsed_seconds=round(time.perf_counter() - started_clock, 6),
         )
-        results, summary = write_combined_ledger(frames, args.output_dir, metadata)
-        inference = write_inference_table(results, args.output_dir, adjustment=args.p_adjustment)
+        results_preview = pd.concat([frame for frame in frames if frame is not None and not frame.empty], ignore_index=True) if any(frame is not None and not frame.empty for frame in frames) else pd.DataFrame(columns=["test_id", "ticker", "status", "method", "observations", "metrics_json", "note"])
+        inference = build_inference_table(results_preview, adjustment=args.p_adjustment)
+        results, summary = write_combined_ledger(frames, args.output_dir, metadata, inference_results=inference)
         print(summary.to_string(index=False))
         print(f"Saved {len(results)} method-level result rows to {args.output_dir}/experiment_results.csv")
         print(f"Saved reproducibility manifest to {args.output_dir}/experiment_manifest.json")
