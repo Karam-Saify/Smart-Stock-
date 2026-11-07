@@ -5,11 +5,12 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from stockresearch.research_registry import METHODS, list_methods
 
 ROOT = Path(__file__).resolve().parent
 RESULTS = ROOT / "results" / "experiment_results.csv"
 PRICE_PANEL = ROOT / "data" / "panel_adjclose.csv"
-TESTS = [f"T{i:02d}" for i in range(1, 19)]
+TESTS = [method.test_id for method in list_methods()]
 
 st.set_page_config(page_title="Smart Stock | Research Lab", page_icon="📈", layout="wide")
 st.markdown("""
@@ -52,11 +53,25 @@ with st.sidebar:
     st.caption("Local files · no data leaves your machine")
     result_path=st.text_input("Results CSV",value=str(RESULTS))
     st.divider()
+    st.markdown("### Research mode")
+    research_mode = st.radio("Experience", ["Guided", "Advanced"], horizontal=True)
+    st.caption("Both modes use the same research methods and validation standards.")
     st.markdown("### Run research")
     stage=st.selectbox("Universe stage",["initial","comparative","exploratory","final"])
-    chosen=st.multiselect("Tests to run",TESTS,default=TESTS)
+    chosen=st.multiselect("Research questions / methods",TESTS,default=TESTS,format_func=lambda test_id: f"{test_id} · {METHODS[test_id].question}")
+    if research_mode == "Guided":
+        st.caption("Choose the question closest to what you want to investigate. Review method assumptions and limitations before interpreting results.")
+    else:
+        st.caption("Advanced mode exposes the same registered methods and raw experiment outputs; parameter-level controls remain method-specific.")
     run=st.button("▶ Run selected research",use_container_width=True,type="primary")
-    st.caption("Runs the existing CLI against data/panel_adjclose.csv.")
+    if chosen:
+        with st.expander("Selected method guidance", expanded=(research_mode == "Guided")):
+            for test_id in chosen:
+                method = METHODS[test_id]
+                st.markdown(f"**{test_id} — {method.domain}**")
+                st.write(method.audience_note)
+                st.caption("Limitations: " + " ".join(method.limitations))
+    st.caption("Runs the registered methods through the existing CLI against data/panel_adjclose.csv.")
 
 if run:
     if not chosen: st.error("Select at least one test.")
