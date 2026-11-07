@@ -1,42 +1,135 @@
-# Research Method Catalogue
+# Smart Stock Product Blueprint v1.0
 
-This catalogue describes currently implemented research engines T01–T18. It is a map of available diagnostics, not a claim that every method is confirmatory or fully validated for every dataset.
+## Product decision
 
-| ID | Domain | Research question | Current methods | Important limitation |
-|---|---|---|---|---|
-| T01 | Distribution | How do return distributions compare with common parametric families? | Normal, Student-t fits, empirical quantiles, likelihood/AIC/BIC | Fit criteria are in-sample; goodness-of-fit and parameter uncertainty require additional care. |
-| T02 | Distribution / stability | How does the sample mean evolve? | Rolling/expanding mean, CUSUM screening statistic | CUSUM screen is not a calibrated formal break-test p-value. |
-| T03 | Volatility | How do variance estimators perform on a chronological holdout? | Rolling variance, EWMA, training-fit GARCH diagnostic | GARCH row is a training-fit diagnostic, not a like-for-like full-holdout forecast. |
-| T04 | Distribution | How does asymmetry evolve? | Rolling and full-sample skewness | Rolling estimates are noisy and overlapping. |
-| T05 | Distribution | How does tail-weight evolve? | Rolling and full-sample excess kurtosis | Rolling estimates are noisy and overlapping. |
-| T06 | Distribution / change | Do first- and second-half return distributions differ? | KS, Anderson-Darling, Wasserstein | Exploratory period comparison; p-values require family-level multiplicity control. |
-| T07 | Data diagnostics | Which observations are flagged as unusual? | Z-score, robust Z-score, empirical percentile screens | Flags are diagnostics, not automatic deletion instructions. |
-| T08 | Statistical properties | Are returns and squared returns stationary? | ADF, KPSS, Phillips-Perron | Tests have different nulls and assumptions; interpret jointly. |
-| T09 | Dependence | Is there serial dependence? | ACF, PACF, Ljung-Box | Lag-wise and repeated p-values are unadjusted in the current engine. |
-| T10 | Dependence | Is there AR(1)-style persistence? | AR(1) regression and conditional half-life diagnostic | Half-life interpretation requires stronger model assumptions; applied to returns. |
-| T11 | Trend / dependence | How do rolling trends and cumulative-return dependence behave? | Rolling regressions and cumulative-return autocorrelation | Overlapping windows and cumulative returns induce dependence. |
-| T12 | Seasonality | Are there calendar-related differences? | Weekday/month ANOVA and period-5 decomposition | Exploratory, unadjusted comparisons; calendar effects can be unstable. |
-| T13 | Structural change | Is there evidence of parameter instability or mean shifts? | OLS CUSUM and PELT mean segmentation | PELT locations are exploratory; penalty sensitivity and stability checks required. |
-| T14 | Volatility | How do volatility forecasts compare on a holdout? | Rolling historical variance, EWMA, bounded-origin GARCH forecasts | GARCH is evaluated at sampled holdout origins; coverage differs across methods. |
-| T15 | Volatility | Are ARCH effects present and how persistent is fitted variance? | ARCH-LM and GARCH persistence | Fitted persistence is specification-dependent, not proof of future persistence. |
-| T16 | Volatility | Do asymmetric volatility specifications fit differently? | EGARCH and GJR-GARCH diagnostics | Information criteria are in-sample; formal out-of-sample comparison remains necessary. |
-| T17 | Risk | How do VaR/CVaR estimates behave on a holdout? | Historical, Normal and Student-t VaR/CVaR | Holdout violation counts are uncertain; CVaR is estimated from training tail. |
-| T18 | Regimes / structural change | Are there latent states or volatility change points? | Two-state Gaussian HMM and PELT volatility segmentation | In-sample segmentation; state stability and chronological refitting are unproven. |
+**Identity:** Research-first statistical market research laboratory.  
+**Initial audience:** Beginners and advanced researchers.  
+**Initial asset scope:** Equities, daily historical observations.  
+**Initial interface:** One application with guided and advanced modes.  
+**Core output:** An auditable, reproducible research finding—not a trading signal.
 
-## Registry rules
+## Mission
 
-- A method ID is stable and must not be reused for a different research question.
-- The registry must match executable engine IDs exactly.
-- Do not advertise a test as implemented merely because it exists in an original proposal or test register.
-- Record exploratory status and limitations alongside method metadata.
-- Add a method only with unit tests, known-truth statistical tests, documented assumptions and an evaluation plan.
-- A test passing software tests is not evidence of predictive performance or empirical market validity.
+Help users discover, investigate, validate and understand financial-market behaviour through structured statistical research, transparent uncertainty and reproducible experiments.
 
-## Current validation utilities
+## Problem
 
-The project also provides reusable controls in `stockresearch.statistical_controls`:
-- Holm, Bonferroni, Benjamini-Hochberg and Benjamini-Yekutieli p-value adjustments.
-- Expanding chronological walk-forward splitting with optional event-label overlap purging.
-- Moving-block bootstrap percentile intervals for a sample mean.
+Market data is accessible, but reliable conclusions are difficult. Method selection, data integrity, temporal leakage, multiple testing, unstable relationships and opaque statistical outputs can all create misleading findings. Smart Stock connects these concerns in one workflow.
 
-These controls are not automatically applied to every engine. Hypothesis families, estimands, label end times and dependence assumptions must be defined by each research design.
+## Product boundaries
+
+### In scope
+- Statistical investigation of equity-market behaviour.
+- Distribution, time-series, volatility, structural-change, factor, regime and risk diagnostics.
+- Hypothesis-driven experiments and reproducible result records.
+- Chronological validation, uncertainty reporting, multiple-testing controls and robustness checks.
+- Guided explanations and advanced method configuration.
+
+### Out of scope for the initial release
+- Trade execution or brokerage connectivity.
+- Buy/sell recommendations or guaranteed forecasts.
+- Claims of causality from observational association.
+- Uncontrolled automated parameter searches.
+- Portfolio optimization as a core feature.
+
+Forecasting research may evaluate predictive validity, but a forecast is not a certainty or a recommendation.
+
+## Users and modes
+
+### Guided researcher
+The user has a research question but may not know which methods are appropriate. The interface explains method choices, required data, assumptions, outputs and limitations.
+
+### Advanced researcher
+The user can select methods, configure parameters, define hypothesis families, inspect detailed numerical outputs and control validation.
+
+Both modes use the same calculation, validation and experiment-recording code. Guided mode must never weaken scientific safeguards.
+
+## Standard research lifecycle
+
+1. **Question:** Record the research question, hypothesis, null, estimand and what evidence would count against the claim.
+2. **Data:** Select instruments, variables, frequency and dates; record provenance and quality checks.
+3. **Design:** Select methods, assumptions, parameters, hypothesis family and validation strategy before examining confirmatory outcomes.
+4. **Execution:** Run methods and preserve configuration, software version, warnings and outputs.
+5. **Validation:** Examine uncertainty, multiple testing, temporal stability, robustness and alternative explanations.
+6. **Interpretation:** Explain effect magnitude, uncertainty, evidence and limitations separately.
+7. **Memory:** Save the experiment and make it reproducible and comparable.
+
+Exploratory analyses must be labelled exploratory. A hypothesis created or materially changed after inspecting results cannot be retroactively described as pre-registered.
+
+## Research credibility
+
+Every finding is assessed across five dimensions:
+
+1. **Data credibility:** provenance, completeness, adjustments, timestamps, calendars and universe construction.
+2. **Method credibility:** suitability, assumptions, parameterization and failure modes.
+3. **Statistical credibility:** estimand, effect size, uncertainty, dependence and multiplicity.
+4. **Temporal credibility:** no look-ahead leakage; chronological validation where time ordering matters.
+5. **Robustness credibility:** sensitivity to periods, instruments, parameters and alternative specifications.
+
+Do not collapse these into one universal confidence score. Report evidence components independently.
+
+## Evidence language
+
+- **Supported:** The predeclared criterion is met on the specified evaluation and, where claimed, independently replicated.
+- **Not supported:** The evaluation did not provide the required support. This does not establish the opposite claim.
+- **Inconclusive:** Evidence is insufficient, unstable, underpowered, conflicting or compromised by data limitations.
+
+Statistical significance, effect magnitude, predictive value, causality and economic relevance are different concepts.
+
+## Data strategy
+
+The first release prioritizes daily equity observations and documented price/volume fields. Provider-specific adapters should normalize data into a common contract while preserving source metadata, retrieval time, adjustment policy, calendar, currency, missingness and quality findings.
+
+Do not claim point-in-time validity when the source cannot establish historical availability. Treat current-universe survivorship bias explicitly. Missing observations must not silently become zero or be filled without a documented policy.
+
+## Architecture
+
+Start with a modular Python application, not microservices. Keep presentation, application workflow, data adapters, method registry, statistical methods, validation, experiment tracking and reporting as distinct modules. Use shared contracts between layers.
+
+The experiment ledger is the canonical record. Each experiment should retain a unique ID, dataset fingerprint, source metadata, question, hypothesis, method IDs and versions, parameters, software commit, random seeds where applicable, validation configuration, results, warnings and runtime.
+
+## User experience
+
+Provide two modes over one engine:
+- **Guided:** question-first workflow, transparent method suggestions and plain-language interpretation.
+- **Advanced:** direct method access, parameters, detailed outputs and validation controls.
+
+Every chart must identify its measure, units, sample, period and relevant limitations. Quick exploration must be visibly distinguished from confirmatory research.
+
+## Performance principles
+
+- Compute shared features once.
+- Cache only with dataset and configuration fingerprints.
+- Separate computation from rendering.
+- Parallelize only independent work when benchmarks justify it.
+- Keep expensive and optional dependencies out of core installation where practical.
+- Benchmark runtime and peak memory before optimizing.
+- Never trade methodological validity for speed.
+
+## Feature acceptance
+
+Every feature proposal must document:
+- The research problem and intended user.
+- Existing functionality and duplication check.
+- Expected improvement.
+- Dependencies and assumptions.
+- Failure modes.
+- Statistical, functional and performance tests.
+- Measurable acceptance criteria.
+
+Feature quantity is not a success metric.
+
+## Release acceptance
+
+The first complete release must take at least one well-defined question through the full lifecycle using documented historical data and produce a reproducible report that correctly communicates the estimate, uncertainty, limitations and validation. A large test count alone does not constitute release readiness.
+
+## Roadmap
+
+- **M0 Product foundation:** approved scope, research taxonomy and standards.
+- **M1 Research foundation:** data contracts, method registry and experiment schema.
+- **M2 Research workspace:** guided and advanced workflows.
+- **M3 Evidence engine:** uncertainty, inference, temporal and robustness validation.
+- **M4 Research guidance:** transparent question-to-method recommendations.
+- **M5 Benchmarking:** synthetic known-truth, null, perturbed and historical evaluations.
+
+Each milestone must pass documented exit criteria. The sequence is not permission to claim unverified capabilities.
