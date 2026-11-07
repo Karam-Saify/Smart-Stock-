@@ -108,19 +108,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         tickers=tickers,
         include_macro=not args.no_macro,
     )
-    audit = audit_panels(root)
+    try:
+        audit = audit_panels(root)
+        quality_rows = int(len(audit))
+        audit_error = None
+    except FileNotFoundError as exc:
+        # If every symbol fails, preserve the manifest and still emit a useful run summary.
+        quality_rows = 0
+        audit_error = str(exc)
 
     manifest_path = root / "download_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     downloaded = manifest.get("downloaded", {})
     failed_map = manifest.get("failures", {})
+    ticker_downloads = {ticker: downloaded[ticker] for ticker in tickers if ticker in downloaded}
     usable = {
-        ticker: item for ticker, item in downloaded.items()
+        ticker: item for ticker, item in ticker_downloads.items()
         if int(item.get("rows", 0)) >= args.min_observations
     }
     too_short = {
         ticker: int(item.get("rows", 0))
-        for ticker, item in downloaded.items()
+        for ticker, item in ticker_downloads.items()
         if int(item.get("rows", 0)) < args.min_observations
     }
     missing_or_failed = sorted(set(tickers) - set(usable))
@@ -129,7 +137,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "data_type": "daily OHLCV, adjusted close, dividends and splits where supplied",
         "requested_tickers": tickers,
         "requested_count": len(tickers),
-        "downloaded_count": len(downloaded),
+        "downloaded_count": len(ticker_downloads),
         "usable_count": len(usable),
         "failed_tickers": sorted(set(failures) | set(failed_map)),
         "insufficient_history": too_short,
@@ -146,7 +154,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "download_manifest.json",
             "quality_audit.csv",
         ],
-        "quality_rows": int(len(audit)),
+        "quality_rows": quality_rows,
+        "quality_audit_error": audit_error,
         "point_in_time_status": "not established; vendor history may be revised",
         "survivorship_warning": "The configured universe is a present-day sample, not a survivorship-free historical universe.",
     }
