@@ -56,6 +56,7 @@ def build_experiment_metadata(
     notes: str = "",
     started_at: str | None = None,
     elapsed_seconds: float | None = None,
+    p_adjustment: str = "holm",
 ) -> dict[str, Any]:
     """Capture dataset identity, provenance, protocol and execution environment."""
     root = Path(data_dir)
@@ -79,6 +80,11 @@ def build_experiment_metadata(
             "stage": stage,
             "tickers": list(tickers),
             "method_ids": list(test_ids),
+            "multiple_testing": {
+                "adjustment": p_adjustment,
+                "family_definition": "same test_id, method, and nested p-value metric across selected tickers",
+                "scope_limitation": "does not adjust across different methods, research questions, time windows, or unrecorded analyst choices",
+            },
             "random_seed": config.SEED,
             "engine_configuration": {
                 "minimum_observations_distribution": 60,
