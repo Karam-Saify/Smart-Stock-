@@ -65,7 +65,7 @@ def build_return_uncertainty(
         if prices.isna().any() or (prices <= 0).any():
             rows.append({
                 **base, "status": "SKIPPED",
-                "note": "Interior missing or nonpositive adjusted prices; no observations were compressed",
+                "note": "Interior missing or nonpositive adjusted prices; no rows were silently removed or compressed",
             })
             continue
         returns = np.diff(np.log(prices.to_numpy(dtype=float)))
