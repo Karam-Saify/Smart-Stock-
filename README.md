@@ -30,7 +30,7 @@ python -m pytest -q
 Offline smoke test: `python run.py download --synthetic`, then run tests and report. Synthetic observations are never real market data.
 
 The `test` command writes `experiment_results.csv`, `experiment_summary.csv`,
-`experiment_inference.csv`, and `experiment_manifest.json`. The manifest records the exact adjusted-price panel SHA-256,
+`experiment_inference.csv`, `experiment_uncertainty.csv`, and `experiment_manifest.json`. The manifest records the exact adjusted-price panel SHA-256,
 available source/download metadata, research question and hypothesis, selected universe
 and methods, key engine settings, software commit, runtime, and execution environment.
 Use `--question`, `--hypothesis`, and `--notes` to preserve the research protocol.
@@ -38,7 +38,7 @@ P-values are adjusted by Holm across tickers within each identical test/method/m
 family by default. Choose `--p-adjustment bonferroni`, `fdr_bh`, `fdr_by`, or `none`
 to change the procedure. This family scope does not correct across different methods,
 questions, time windows, or analyst choices; define those families in the research design.
-Each invocation starts with
+The uncertainty file reports moving-block bootstrap intervals for the historical mean\ndaily log return from adjusted closes. Defaults are 5 trading observations per block,\n2,000 replicates and a 95% percentile interval. Incomplete ticker histories are skipped\nrather than compressed. These are descriptive intervals, not forecasts; the block length\nis a protocol choice and should be varied in sensitivity analysis.\nEach invocation starts with
 fresh intermediate engine outputs, so previous runs are not silently appended to
 the current run. The latest run replaces the canonical ledger.
 
