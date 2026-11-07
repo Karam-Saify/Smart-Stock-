@@ -1,0 +1,65 @@
+name: Real market data refresh
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Start date (YYYY-MM-DD); leave blank for the configured history start"
+        required: false
+        type: string
+      end:
+        description: "Exclusive end date (YYYY-MM-DD); leave blank for latest available data"
+        required: false
+        type: string
+      tickers:
+        description: "Comma-separated symbols; leave blank for the full research universe"
+        required: false
+        type: string
+  schedule:
+    - cron: "30 22 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-market-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install data-ingestion dependencies
+        run: python -m pip install --upgrade pip pandas numpy yfinance
+
+      - name: Download real market data and audit it
+        env:
+          SCRAPE_START: ${{ inputs.start }}
+          SCRAPE_END: ${{ inputs.end }}
+          SCRAPE_TICKERS: ${{ inputs.tickers }}
+        run: |
+          args=(--data-dir data)
+          if [ -n "$SCRAPE_START" ]; then args+=(--start "$SCRAPE_START"); fi
+          if [ -n "$SCRAPE_END" ]; then args+=(--end "$SCRAPE_END"); fi
+          if [ -n "$SCRAPE_TICKERS" ]; then args+=(--tickers "$SCRAPE_TICKERS"); fi
+          python scripts/scrape_market_data.py "${args[@]}"
+
+      - name: Upload raw data, panels, provenance and quality audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-stock-market-data-${{ github.run_id }}
+          path: data/
+          if-no-files-found: warn
+          retention-days: 14
