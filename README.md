@@ -4,7 +4,8 @@ A reproducible, hypothesis-driven environment for statistical research on equity
 
 ## Capabilities
 - 48-instrument research universe: 36 stocks, 4 broad-market ETFs, 8 sector ETFs.
-- T01–T40 experiment register, staged research, and long-form result ledger.
+- T01–T18 implemented research engines, a documented method catalogue, staged research, and a unified result ledger. Proposed T19–T40 items are not represented as implemented until audited and integrated.
+- Guided and advanced research dashboard modes backed by one method registry.
 - Discovery / validation / locked-final chronological evaluation.
 - Raw data retention, panel construction, quality metadata, and offline synthetic data.
 - Explicit ERROR and SKIPPED rows; no silent test failures.
@@ -41,3 +42,10 @@ the current run. The latest run replaces the canonical ledger.
 7. The current-company universe is survivorship-biased; do not generalize it to the historical market.
 
 Yahoo Finance is a convenient but unaudited data source. Verify corporate actions, ticker histories, and vendor revisions. Strategy-like experiments are hypothetical only and do not establish profitability.
+
+## Product and research design
+
+- [Product Blueprint v1.0](docs/PRODUCT_BLUEPRINT.md) defines purpose, users, workflow, boundaries, evidence standards, architecture and roadmap.
+- [Method Catalogue](docs/METHOD_CATALOG.md) documents the currently implemented T01–T18 engines and their limitations.
+- List available methods with `python run.py methods`; filter by domain with `python run.py methods --domain volatility`; use `--json` for machine-readable metadata.
+- The dashboard provides Guided and Advanced modes over the same registered methods: install optional UI dependencies with `pip install -r requirements-ui.txt`, then run `streamlit run app.py`.
