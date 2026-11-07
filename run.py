@@ -13,6 +13,7 @@ from stockresearch.universe import stage_stocks
 from stockresearch.config import INITIAL_SIX
 from stockresearch.risk import run_risk_experiments, TEST_IDS as RISK_TEST_IDS
 from stockresearch.ledger import write_combined_ledger
+from stockresearch.research_registry import list_methods
 
 
 def main():
@@ -30,12 +31,29 @@ def main():
     t.add_argument("--output-dir", default="results")
     t.add_argument("--stage", choices=["initial", "comparative", "exploratory", "final"], default="initial")
     t.add_argument("--tests", nargs="+", choices=TEST_IDS + TIME_SERIES_TEST_IDS + RISK_TEST_IDS)
+    methods = sub.add_parser("methods", help="List implemented research methods")
+    methods.add_argument("--domain", help="Filter by research domain")
+    methods.add_argument("--json", action="store_true", help="Print machine-readable method metadata")
     report = sub.add_parser("report")
     report.add_argument("--output-dir", default="results")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    if args.command == "download":
+    if args.command == "methods":
+        import json
+        catalogue = list_methods(args.domain)
+        if args.json:
+            print(json.dumps([{
+                "test_id": item.test_id, "domain": item.domain,
+                "question": item.question, "methods": list(item.methods),
+                "limitations": list(item.limitations), "status": item.status,
+            } for item in catalogue], indent=2))
+        else:
+            for item in catalogue:
+                print(f"{item.test_id} [{item.domain}] {item.question}")
+                print("  Methods:", ", ".join(item.methods))
+                print("  Limitations:", "; ".join(item.limitations))
+    elif args.command == "download":
         if args.synthetic:
             synthetic.make(args.data_dir, end=args.end or "2025-12-31")
         else:
