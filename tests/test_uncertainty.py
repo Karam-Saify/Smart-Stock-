@@ -45,3 +45,9 @@ def test_unknown_ticker_is_skipped(tmp_path):
     result = build_return_uncertainty(tmp_path, ["MISSING"])
     assert result.loc[0, "status"] == "SKIPPED"
     assert "absent" in result.loc[0, "note"]
+
+
+def test_uncertainty_rejects_invalid_protocol(tmp_path):
+    import pytest
+    with pytest.raises(ValueError, match="n_bootstrap"):
+        build_return_uncertainty(tmp_path, ["AAA"], n_bootstrap=20)
