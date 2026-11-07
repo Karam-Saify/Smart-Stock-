@@ -33,7 +33,11 @@ The `test` command writes `experiment_results.csv`, `experiment_summary.csv`,
 `experiment_inference.csv`, and `experiment_manifest.json`. The manifest records the exact adjusted-price panel SHA-256,
 available source/download metadata, research question and hypothesis, selected universe
 and methods, key engine settings, software commit, runtime, and execution environment.
-Use `--question`, `--hypothesis`, and `--notes` to preserve the research protocol.\nP-values are adjusted by Holm across tickers within each identical test/method/metric\nfamily by default. Choose `--p-adjustment bonferroni`, `fdr_bh`, `fdr_by`, or `none`\nto change the procedure. This family scope does not correct across different methods,\nquestions, time windows, or analyst choices; define those families in the research design.
+Use `--question`, `--hypothesis`, and `--notes` to preserve the research protocol.
+P-values are adjusted by Holm across tickers within each identical test/method/metric
+family by default. Choose `--p-adjustment bonferroni`, `fdr_bh`, `fdr_by`, or `none`
+to change the procedure. This family scope does not correct across different methods,
+questions, time windows, or analyst choices; define those families in the research design.
 Each invocation starts with
 fresh intermediate engine outputs, so previous runs are not silently appended to
 the current run. The latest run replaces the canonical ledger.
