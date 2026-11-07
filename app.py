@@ -58,6 +58,8 @@ with st.sidebar:
     st.caption("Both modes use the same research methods and validation standards.")
     st.markdown("### Run research")
     stage=st.selectbox("Universe stage",["initial","comparative","exploratory","final"])
+    research_question = st.text_input("Research question", placeholder="What market behaviour are you investigating?")
+    hypothesis = st.text_input("Predeclared hypothesis", placeholder="What result would support or contradict it?")
     chosen=st.multiselect("Research questions / methods",TESTS,default=TESTS,format_func=lambda test_id: f"{test_id} · {METHODS[test_id].question}")
     if research_mode == "Guided":
         st.caption("Choose the question closest to what you want to investigate. Review method assumptions and limitations before interpreting results.")
@@ -78,6 +80,8 @@ if run:
     elif not PRICE_PANEL.exists(): st.error("No adjusted-price panel. Run python run.py download first.")
     else:
         cmd=[sys.executable,str(ROOT/"run.py"),"test","--stage",stage,"--tests",*chosen]
+        if research_question.strip(): cmd.extend(["--question", research_question.strip()])
+        if hypothesis.strip(): cmd.extend(["--hypothesis", hypothesis.strip()])
         with st.spinner("Running statistical experiments…"):
             proc=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True,timeout=1800)
         if proc.returncode==0:
