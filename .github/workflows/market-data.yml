@@ -1,6 +1,14 @@
 name: Real market data refresh
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/market-data.yml'
+      - 'scripts/scrape_market_data.py'
+      - 'stockresearch/data.py'
+      - 'stockresearch/quality.py'
+      - 'stockresearch/universe.py'
   workflow_dispatch:
     inputs:
       start:
