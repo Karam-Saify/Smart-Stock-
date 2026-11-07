@@ -25,6 +25,12 @@ def build_return_uncertainty(
     returns into artificial contiguous blocks. This is a descriptive historical
     estimand, not a forecast or an investment-performance guarantee.
     """
+    if block_length < 1:
+        raise ValueError("block_length must be >= 1")
+    if n_bootstrap < 100:
+        raise ValueError("n_bootstrap must be >= 100")
+    if not 0 < confidence < 1:
+        raise ValueError("confidence must be between 0 and 1")
     panel_path = Path(data_dir) / "panel_adjclose.csv"
     if not panel_path.is_file():
         raise FileNotFoundError(f"Adjusted-price panel not found: {panel_path}")
