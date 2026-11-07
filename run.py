@@ -17,6 +17,7 @@ from stockresearch.risk import run_risk_experiments, TEST_IDS as RISK_TEST_IDS
 from stockresearch.ledger import write_combined_ledger
 from stockresearch.experiment_metadata import build_experiment_metadata
 from stockresearch.research_registry import list_methods
+from stockresearch.inference import write_inference_table
 
 
 def main():
@@ -37,6 +38,7 @@ def main():
     t.add_argument("--question", default="", help="Research question recorded in the experiment manifest")
     t.add_argument("--hypothesis", default="", help="Predeclared hypothesis recorded in the experiment manifest")
     t.add_argument("--notes", default="", help="Protocol notes and assumptions recorded in the manifest")
+    t.add_argument("--p-adjustment", choices=["holm", "bonferroni", "fdr_bh", "fdr_by", "none"], default="holm", help="Multiple-testing adjustment across tickers within each method/metric family")
     methods = sub.add_parser("methods", help="List implemented research methods")
     methods.add_argument("--domain", help="Filter by research domain")
     methods.add_argument("--json", action="store_true", help="Print machine-readable method metadata")
@@ -91,12 +93,15 @@ def main():
         metadata = build_experiment_metadata(
             args.data_dir, stage=args.stage, tickers=tickers, test_ids=selected,
             research_question=args.question, hypothesis=args.hypothesis, notes=args.notes,
+            p_adjustment=args.p_adjustment,
             started_at=started_at, elapsed_seconds=round(time.perf_counter() - started_clock, 6),
         )
         results, summary = write_combined_ledger(frames, args.output_dir, metadata)
+        inference = write_inference_table(results, args.output_dir, adjustment=args.p_adjustment)
         print(summary.to_string(index=False))
         print(f"Saved {len(results)} method-level result rows to {args.output_dir}/experiment_results.csv")
         print(f"Saved reproducibility manifest to {args.output_dir}/experiment_manifest.json")
+        print(f"Saved {len(inference)} adjusted inference rows to {args.output_dir}/experiment_inference.csv")
     elif args.command == "report":
         import pandas as pd
         path = Path(args.output_dir) / "experiment_results.csv"
