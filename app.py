@@ -56,10 +56,12 @@ with st.sidebar:
     st.markdown("### Research mode")
     research_mode = st.radio("Experience", ["Guided", "Advanced"], horizontal=True)
     st.caption("Both modes use the same research methods and validation standards.")
+    st.caption("P-value adjustments are saved separately from raw method outputs.")
     st.markdown("### Run research")
     stage=st.selectbox("Universe stage",["initial","comparative","exploratory","final"])
     research_question = st.text_input("Research question", placeholder="What market behaviour are you investigating?")
     hypothesis = st.text_input("Predeclared hypothesis", placeholder="What result would support or contradict it?")
+    p_adjustment = st.selectbox("Multiple-testing adjustment", ["holm", "bonferroni", "fdr_bh", "fdr_by", "none"], index=0, help="Applied across tickers within each identical method and p-value metric family. It does not correct across different methods or research questions.")
     protocol_notes = st.text_area("Protocol notes", placeholder="Assumptions, exclusions, thresholds, and caveats", height=80)
     chosen=st.multiselect("Research questions / methods",TESTS,default=TESTS,format_func=lambda test_id: f"{test_id} · {METHODS[test_id].question}")
     if research_mode == "Guided":
@@ -84,6 +86,7 @@ if run:
         if research_question.strip(): cmd.extend(["--question", research_question.strip()])
         if hypothesis.strip(): cmd.extend(["--hypothesis", hypothesis.strip()])
         if protocol_notes.strip(): cmd.extend(["--notes", protocol_notes.strip()])
+        cmd.extend(["--p-adjustment", p_adjustment])
         with st.spinner("Running statistical experiments…"):
             proc=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True,timeout=1800)
         if proc.returncode==0:
@@ -161,7 +164,7 @@ with uncertainty:
     if pvals.empty:
         st.info("No scalar p-values in this selection. Confidence intervals are not systematically recorded in the current ledger.")
     else:
-        st.caption("Unadjusted p-values are exploratory. A 0.05 reference is not a universal decision boundary; account for multiple testing.")
+        st.caption("Raw p-values are shown for transparency. Use the separately reported adjusted values for the declared ticker-level families; they do not cover every possible research choice.")
         pv=pvals[["test_id","ticker","method","metric","value","observations"]].copy()
         pv["below_0_05_unadjusted"]=pv.value<0.05
         fig=px.strip(pv,x="test_id",y="value",color="below_0_05_unadjusted",hover_data=["ticker","method","metric","observations"],color_discrete_map={True:"#ed6a78",False:"#66b8d4"})
@@ -169,9 +172,17 @@ with uncertainty:
         fig.update_layout(template="plotly_dark",yaxis_type="log",paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",height=390)
         st.plotly_chart(fig,use_container_width=True)
         st.dataframe(pv,use_container_width=True,hide_index=True)
+    inference_path = Path(result_path).expanduser().parent / "experiment_inference.csv"
+    if inference_path.exists():
+        adjusted = pd.read_csv(inference_path)
+        if not adjusted.empty and {"test_id", "ticker"}.issubset(adjusted.columns):
+            adjusted = adjusted[adjusted.test_id.isin(tf) & adjusted.ticker.isin(sf)]
+            st.subheader("Multiple-testing adjusted inference")
+            st.caption("Families are grouped by test ID, method and metric path across selected tickers. Different methods, questions and time windows are not combined.")
+            st.dataframe(adjusted, use_container_width=True, hide_index=True)
     st.markdown("**Evidence checklist**")
     st.write("- Sample sizes and skipped/error rows remain visible.")
-    st.write("- The ledger lacks systematic confidence intervals and adjusted-p-value fields.")
+    st.write("- Adjusted p-values are stored separately in experiment_inference.csv; the family scope is limited and explicit.")
     st.write("- PBO is a split-based selection-instability diagnostic, not a conventional confidence interval.")
     st.write("- Serial dependence, overlapping observations, model selection and survivorship bias can invalidate naive uncertainty estimates.")
 with ledger:
