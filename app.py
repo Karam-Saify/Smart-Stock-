@@ -60,6 +60,7 @@ with st.sidebar:
     stage=st.selectbox("Universe stage",["initial","comparative","exploratory","final"])
     research_question = st.text_input("Research question", placeholder="What market behaviour are you investigating?")
     hypothesis = st.text_input("Predeclared hypothesis", placeholder="What result would support or contradict it?")
+    protocol_notes = st.text_area("Protocol notes", placeholder="Assumptions, exclusions, thresholds, and caveats", height=80)
     chosen=st.multiselect("Research questions / methods",TESTS,default=TESTS,format_func=lambda test_id: f"{test_id} · {METHODS[test_id].question}")
     if research_mode == "Guided":
         st.caption("Choose the question closest to what you want to investigate. Review method assumptions and limitations before interpreting results.")
@@ -82,6 +83,7 @@ if run:
         cmd=[sys.executable,str(ROOT/"run.py"),"test","--stage",stage,"--tests",*chosen]
         if research_question.strip(): cmd.extend(["--question", research_question.strip()])
         if hypothesis.strip(): cmd.extend(["--hypothesis", hypothesis.strip()])
+        if protocol_notes.strip(): cmd.extend(["--notes", protocol_notes.strip()])
         with st.spinner("Running statistical experiments…"):
             proc=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True,timeout=1800)
         if proc.returncode==0:
