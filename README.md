@@ -14,17 +14,22 @@ Python 3.10+ recommended.
 
 ```bash
 python -m venv .venv
-# Windows: .venv\Scripts\activate
+# Windows: .venv\\Scripts\\activate
 # macOS/Linux: source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 python run.py download
 python run.py test --stage initial --tests T01 T02 T03 T04 T05 T06 T07
-python run.py report --stage initial
+python run.py report
 python -m pytest -q
 ```
 
 Offline smoke test: `python run.py download --synthetic`, then run tests and report. Synthetic observations are never real market data.
+
+The `test` command writes one combined `experiment_results.csv` and
+`experiment_summary.csv` across all selected engines. Each invocation starts with
+fresh intermediate engine outputs, so previous runs are not silently appended to
+the current run. The latest run replaces the canonical ledger.
 
 ## Research rules
 1. Pre-register hypotheses, metrics, thresholds, and decision criteria before examining validation/final outcomes.
