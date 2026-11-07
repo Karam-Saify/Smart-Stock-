@@ -55,10 +55,17 @@ def build_return_uncertainty(
             continue
 
         prices = pd.to_numeric(panel[ticker], errors="coerce")
+        observed = prices.dropna()
+        if observed.empty:
+            rows.append({**base, "status": "SKIPPED", "note": "No valid adjusted-price observations"})
+            continue
+        # Leading/trailing NaNs commonly represent pre-listing/post-coverage dates.
+        # Trim only those boundaries; interior gaps would break block adjacency.
+        prices = prices.loc[observed.index[0]:observed.index[-1]]
         if prices.isna().any() or (prices <= 0).any():
             rows.append({
                 **base, "status": "SKIPPED",
-                "note": "Incomplete or nonpositive adjusted-price history; no rows were silently removed",
+                "note": "Interior missing or nonpositive adjusted prices; no observations were compressed",
             })
             continue
         returns = np.diff(np.log(prices.to_numpy(dtype=float)))
