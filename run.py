@@ -19,6 +19,7 @@ from stockresearch.experiment_metadata import build_experiment_metadata
 from stockresearch.research_registry import list_methods
 from stockresearch.inference import build_inference_table
 from stockresearch.uncertainty import build_return_uncertainty
+from stockresearch import config
 
 
 def main():
@@ -105,7 +106,7 @@ def main():
         uncertainty = build_return_uncertainty(
             args.data_dir, tickers, block_length=args.ci_block_length,
             n_bootstrap=args.ci_bootstrap, confidence=args.ci_confidence,
-            random_state=42,
+            random_state=config.SEED,
         )
         metadata["research_protocol"]["uncertainty"] = {
             "estimand": "mean daily log return from adjusted closes",
