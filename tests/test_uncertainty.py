@@ -51,3 +51,15 @@ def test_uncertainty_rejects_invalid_protocol(tmp_path):
     import pytest
     with pytest.raises(ValueError, match="n_bootstrap"):
         build_return_uncertainty(tmp_path, ["AAA"], n_bootstrap=20)
+
+
+def test_leading_prelisting_gaps_are_trimmed_but_interior_gaps_are_not(tmp_path):
+    index = pd.bdate_range("2021-01-01", periods=100)
+    rng = np.random.default_rng(4)
+    returns = rng.normal(0.0, 0.01, 99)
+    prices = 20 * np.exp(np.r_[0.0, np.cumsum(returns)])
+    panel = pd.DataFrame({"IPO": [np.nan] * 40 + list(prices) + [np.nan] * 3}, index=pd.bdate_range("2020-11-06", periods=143))
+    panel.to_csv(tmp_path / "panel_adjclose.csv")
+    result = build_return_uncertainty(tmp_path, ["IPO"], block_length=5, n_bootstrap=100)
+    assert result.loc[0, "status"] == "OK"
+    assert result.loc[0, "observations"] == 99
