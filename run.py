@@ -18,6 +18,8 @@ from stockresearch.ledger import write_combined_ledger
 from stockresearch.experiment_metadata import build_experiment_metadata
 from stockresearch.research_registry import list_methods
 from stockresearch.inference import build_inference_table
+from stockresearch.uncertainty import build_return_uncertainty
+from stockresearch import config
 
 
 def main():
@@ -39,6 +41,9 @@ def main():
     t.add_argument("--hypothesis", default="", help="Predeclared hypothesis recorded in the experiment manifest")
     t.add_argument("--notes", default="", help="Protocol notes and assumptions recorded in the manifest")
     t.add_argument("--p-adjustment", choices=["holm", "bonferroni", "fdr_bh", "fdr_by", "none"], default="holm", help="Multiple-testing adjustment across tickers within each method/metric family")
+    t.add_argument("--ci-block-length", type=int, default=5, help="Moving-block length in trading observations for mean daily log-return uncertainty")
+    t.add_argument("--ci-bootstrap", type=int, default=2000, help="Number of moving-block bootstrap replicates")
+    t.add_argument("--ci-confidence", type=float, default=0.95, help="Confidence level for moving-block percentile intervals")
     methods = sub.add_parser("methods", help="List implemented research methods")
     methods.add_argument("--domain", help="Filter by research domain")
     methods.add_argument("--json", action="store_true", help="Print machine-readable method metadata")
@@ -98,11 +103,26 @@ def main():
         )
         results_preview = pd.concat([frame for frame in frames if frame is not None and not frame.empty], ignore_index=True) if any(frame is not None and not frame.empty for frame in frames) else pd.DataFrame(columns=["test_id", "ticker", "status", "method", "observations", "metrics_json", "note"])
         inference = build_inference_table(results_preview, adjustment=args.p_adjustment)
-        results, summary = write_combined_ledger(frames, args.output_dir, metadata, inference_results=inference)
+        uncertainty = build_return_uncertainty(
+            args.data_dir, tickers, block_length=args.ci_block_length,
+            n_bootstrap=args.ci_bootstrap, confidence=args.ci_confidence,
+            random_state=config.SEED,
+        )
+        metadata["research_protocol"]["uncertainty"] = {
+            "estimand": "mean daily log return from adjusted closes",
+            "method": "non-circular moving-block percentile bootstrap",
+            "block_length": args.ci_block_length,
+            "bootstrap_replicates": args.ci_bootstrap,
+            "confidence": args.ci_confidence,
+            "missing_data_policy": "skip incomplete ticker series; do not compress gaps",
+            "interpretation": "descriptive historical interval; not a predictive interval",
+        }
+        results, summary = write_combined_ledger(frames, args.output_dir, metadata, inference_results=inference, uncertainty_results=uncertainty)
         print(summary.to_string(index=False))
         print(f"Saved {len(results)} method-level result rows to {args.output_dir}/experiment_results.csv")
         print(f"Saved reproducibility manifest to {args.output_dir}/experiment_manifest.json")
         print(f"Saved {len(inference)} adjusted inference rows to {args.output_dir}/experiment_inference.csv")
+        print(f"Saved {len(uncertainty)} ticker uncertainty rows to {args.output_dir}/experiment_uncertainty.csv")
     elif args.command == "report":
         import pandas as pd
         path = Path(args.output_dir) / "experiment_results.csv"

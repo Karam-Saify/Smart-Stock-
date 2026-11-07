@@ -41,6 +41,7 @@ def write_combined_ledger(
     output_dir: str | Path,
     experiment_metadata: dict[str, Any] | None = None,
     inference_results: pd.DataFrame | None = None,
+    uncertainty_results: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Write the canonical result ledger, summary and optional provenance manifest."""
     normalized = []
@@ -64,10 +65,13 @@ def write_combined_ledger(
     _atomic_csv(summary, dest / "experiment_summary.csv")
     if inference_results is not None:
         _atomic_csv(inference_results, dest / "experiment_inference.csv")
+    if uncertainty_results is not None:
+        _atomic_csv(uncertainty_results, dest / "experiment_uncertainty.csv")
     if experiment_metadata is not None:
         manifest = dict(experiment_metadata)
         manifest["result_rows"] = int(len(results))
         manifest["inference_rows"] = int(len(inference_results)) if inference_results is not None else 0
+        manifest["uncertainty_rows"] = int(len(uncertainty_results)) if uncertainty_results is not None else 0
         manifest["status_counts"] = (
             results["status"].value_counts(dropna=False).sort_index().to_dict()
             if not results.empty else {}

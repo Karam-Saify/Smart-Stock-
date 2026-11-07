@@ -133,3 +133,19 @@ The first complete release must take at least one well-defined question through 
 - **M5 Benchmarking:** synthetic known-truth, null, perturbed and historical evaluations.
 
 Each milestone must pass documented exit criteria. The sequence is not permission to claim unverified capabilities.
+
+
+## Uncertainty output (current implementation)
+
+Every research run also writes `experiment_uncertainty.csv`, a separate descriptive
+interval for the mean daily log return of each selected instrument. It uses a
+non-circular moving-block percentile bootstrap over adjusted-close log returns.
+The default protocol is a five-observation block, 2,000 replicates and 95% interval.
+The manifest records these settings and the estimand.
+
+This interval is not a predictive interval, does not quantify uncertainty for every
+engine metric, and does not correct for research selection or multiple time-window
+comparisons. The block length is a user-controlled dependence assumption; sensitivity
+to alternative block lengths should be examined. Incomplete price histories are
+skipped rather than compressing gaps and creating artificial adjacency. Annualization
+is deliberately omitted.
