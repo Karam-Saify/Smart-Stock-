@@ -20,7 +20,9 @@ python -m venv .venv
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 python run.py download
-python run.py test --stage initial --tests T01 T02 T03 T04 T05 T06 T07 \\\n  --question "How does return volatility vary?" \\\n  --hypothesis "Volatility differs across the sampled periods."
+python run.py test --stage initial --tests T01 T02 T03 T04 T05 T06 T07 \
+  --question "How does return volatility vary?" \
+  --hypothesis "Volatility differs across the sampled periods."
 python run.py report
 python -m pytest -q
 ```
