@@ -56,16 +56,18 @@ def probability_of_backtest_overfitting(
         train = pd.concat([slices[i] for i in in_sample_ids], axis=0)
         test = pd.concat([slices[i] for i in out_sample_ids], axis=0)
         train_score = train.mean(axis=0)
-        selected = str(train_score.idxmax())
+        selected_label = train_score.idxmax()
+        selected = str(selected_label)
         test_score = test.mean(axis=0)
+        # Keep the original column label for indexing (asset names need not be strings).
         # Percentile 1 is best; percentile 0 is worst.
-        percentile = float(test_score.rank(method="average", pct=True).loc[selected])
+        percentile = float(test_score.rank(method="average", pct=True).loc[selected_label])
         # PBO event: selected candidate falls below the OOS median.
         rows.append({
             "in_sample_slices": ",".join(map(str, in_sample_ids)),
             "selected_candidate": selected,
-            "in_sample_mean": float(train_score.loc[selected]),
-            "out_of_sample_mean": float(test_score.loc[selected]),
+            "in_sample_mean": float(train_score.loc[selected_label]),
+            "out_of_sample_mean": float(test_score.loc[selected_label]),
             "oos_percentile": percentile,
             "below_oos_median": bool(percentile < 0.5),
         })
