@@ -59,3 +59,9 @@ Yahoo Finance is a convenient but unaudited data source. Verify corporate action
 - [Method Catalogue](docs/METHOD_CATALOG.md) documents the currently implemented T01–T18 engines and their limitations.
 - List available methods with `python run.py methods`; filter by domain with `python run.py methods --domain volatility`; use `--json` for machine-readable metadata.
 - The dashboard provides Guided and Advanced modes over the same registered methods: install optional UI dependencies with `pip install -r requirements-ui.txt`, then run `streamlit run app.py`.
+
+
+## Research-only strategy evaluation and paper simulation
+The optional `trade.py` layer provides a frozen evaluation protocol, cost-aware historical simulation,
+risk controls, and a virtual paper broker. It places no real orders and has no live broker adapter.
+See [docs/TRADING.md](docs/TRADING.md).

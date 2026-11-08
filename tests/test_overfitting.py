@@ -39,3 +39,21 @@ def test_rejects_missing_values_and_too_few_candidates():
         probability_of_backtest_overfitting(pd.DataFrame({"a": [1.0] * 80, "b": [np.nan] * 80}))
     with pytest.raises(ValueError):
         probability_of_backtest_overfitting(pd.DataFrame({"a": [1.0] * 80}))
+
+
+def test_pbo_can_match_sharpe_selection_objective():
+    a = np.tile([0.21, -0.19], 40)
+    b = np.tile([0.01, 0.00], 40)
+    frame = pd.DataFrame({"high_mean_low_sharpe": a, "lower_mean_high_sharpe": b})
+    _, mean_summary = probability_of_backtest_overfitting(frame, n_slices=8, selection_metric="mean")
+    detail, sharpe_summary = probability_of_backtest_overfitting(frame, n_slices=8, selection_metric="sharpe")
+    assert mean_summary["selection_metric"] == "mean"
+    assert sharpe_summary["selection_metric"] == "sharpe"
+    assert (detail["selected_candidate"] == "lower_mean_high_sharpe").all()
+    assert sharpe_summary["pbo"] == 0.0
+
+
+def test_pbo_rejects_unknown_selection_metric():
+    frame = pd.DataFrame(np.random.default_rng(1).normal(size=(80, 3)))
+    with pytest.raises(ValueError, match="selection_metric"):
+        probability_of_backtest_overfitting(frame, selection_metric="sortino")

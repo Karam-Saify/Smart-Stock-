@@ -17,18 +17,16 @@ def probability_of_backtest_overfitting(
     *,
     n_slices: int = 8,
     min_observations_per_slice: int = 10,
-) -> tuple[pd.DataFrame, dict[str, float | int]]:
+    selection_metric: str = "mean",
+) -> tuple[pd.DataFrame, dict[str, float | int | str]]:
     """Estimate PBO using CSCV on an already-defined candidate return matrix.
 
     Rows are chronological observations and columns are candidate strategies.
     The sample is split into equal contiguous slices (remainder is discarded).
-    For each choice of half the slices as in-sample, the best in-sample mean
-    return is selected and its rank among candidates is measured on the
-    complementary slices. PBO is the fraction of splits where the selected
-    candidate ranks below the out-of-sample median.
-
-    This simple implementation uses mean return as the selection statistic.
-    Researchers should use a predeclared objective appropriate to their study.
+    For each choice of half the slices as in-sample, the best candidate under
+    selection_metric is selected and ranked under the same metric out of sample.
+    Supported metrics are arithmetic mean return and daily Sharpe ratio. The
+    metric must match the research protocol's candidate-selection objective.
     """
     if not isinstance(returns, pd.DataFrame):
         raise TypeError("returns must be a pandas DataFrame")
@@ -40,6 +38,8 @@ def probability_of_backtest_overfitting(
         raise ValueError("n_slices must be an even integer of at least 4")
     if min_observations_per_slice < 2:
         raise ValueError("min_observations_per_slice must be at least 2")
+    if selection_metric not in {"mean", "sharpe"}:
+        raise ValueError("selection_metric must be 'mean' or 'sharpe'")
     numeric = returns.apply(pd.to_numeric, errors="coerce").replace([np.inf, -np.inf], np.nan)
     if numeric.isna().any().any():
         raise ValueError("returns must be complete and finite; handle missingness explicitly")
@@ -55,10 +55,17 @@ def probability_of_backtest_overfitting(
         out_sample_ids = tuple(i for i in range(n_slices) if i not in in_set)
         train = pd.concat([slices[i] for i in in_sample_ids], axis=0)
         test = pd.concat([slices[i] for i in out_sample_ids], axis=0)
-        train_score = train.mean(axis=0)
+        def score(frame: pd.DataFrame) -> pd.Series:
+            mean = frame.mean(axis=0)
+            if selection_metric == "mean":
+                return mean
+            std = frame.std(axis=0, ddof=1).replace(0.0, np.nan)
+            return (mean / std).replace([np.inf, -np.inf], np.nan).fillna(-np.inf)
+
+        train_score = score(train)
         selected_label = train_score.idxmax()
         selected = str(selected_label)
-        test_score = test.mean(axis=0)
+        test_score = score(test)
         # Keep the original column label for indexing (asset names need not be strings).
         # Percentile 1 is best; percentile 0 is worst.
         percentile = float(test_score.rank(method="average", pct=True).loc[selected_label])
@@ -77,6 +84,7 @@ def probability_of_backtest_overfitting(
         "pbo": pbo,
         "splits": int(len(detail)),
         "candidates": int(numeric.shape[1]),
+        "selection_metric": selection_metric,
         "observations_used": int(len(usable)),
         "observations_discarded_remainder": int(len(numeric) - len(usable)),
         "interpretation": "descriptive_selection_instability_diagnostic",
