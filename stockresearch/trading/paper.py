@@ -55,6 +55,9 @@ def run_paper_day(data_dir,paper_dir,out_dir,cfg=None,today=None,allow_stale=Fal
         w=clip_weights(cand.weights(px.to_numpy()),lim)
         st["pending"]={"decided_on":run_id,"weights":dict(zip(px.columns,map(float,w)))}
         notes.append("targets decided for next run")
+    # Persist every processed market date, including no-order days. Otherwise
+    # idempotency only applies on days that happened to generate an order batch.
+    b.execute([], run_id)
     b.save(); after=b.equity(prices)
     _append(ep,[{"date":run_id,"equity":after,"cash":b.cash(),"drawdown":1-after/max(st["peak_equity"],after),"halted":halted}])
     _append(pdx/"orders.csv",[{"run_id":f.run_id,"symbol":f.symbol,"shares":f.shares,"price":f.price,"cost":f.cost} for f in fills])
